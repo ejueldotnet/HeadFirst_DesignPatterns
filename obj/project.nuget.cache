@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "VC7cLMsBqEKchbYmk2ZpBtY0oT7j7mMzkqZpiksq67XcQjVdvdQoDeL42co3HT7CpDztlJla+nuFBva0KRnAJg==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\zeke.juel\\source\\repos\\HeadFirst_DesignPatterns\\HeadFirst_DesignPatterns.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\zeke.juel\\.nuget\\packages\\microsoft.netcore.app.host.win-x64\\3.1.13\\microsoft.netcore.app.host.win-x64.3.1.13.nupkg.sha512"
+  ],
+  "logs": []
+}
