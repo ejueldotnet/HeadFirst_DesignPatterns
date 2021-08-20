@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 
-namespace HeadFirst_DesignPatterns.Tools
+namespace Tools
 {
     class MyConsole
     {
@@ -41,6 +42,34 @@ namespace HeadFirst_DesignPatterns.Tools
             {
                 Console.Clear();
             }
+        }
+
+        public static string[] StackTrace_FunctionsOnly(string separator = "->")
+        {
+            //string stack = Environment.StackTrace;
+            var st = new StackTrace();
+            Stack<string> functionStack = new Stack<string>();
+            for (int i = 1; i < st.FrameCount; i++)
+            {
+                //skip frame 0 since that's this function and we don't need it for reporting 
+                var sf = st.GetFrame(i);
+                functionStack.Push(sf.GetMethod().Name);
+
+            }
+
+            bool firstLine = true;
+            string[] results = functionStack.ToArray();
+            while (functionStack.Count > 0)
+            {
+                if (!firstLine)
+                {
+                    Console.Write(separator);
+                }
+                Console.Write($"{functionStack.Pop()}");
+                firstLine = false;
+            }
+            Console.WriteLine("");
+            return results;
         }
     }
 }
