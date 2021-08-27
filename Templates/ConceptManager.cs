@@ -1,4 +1,4 @@
-﻿using HeadFirst_DesignPatterns.Tools;
+﻿using Tools;
 using System;
 using System.Collections.Generic;
 using System.Text;

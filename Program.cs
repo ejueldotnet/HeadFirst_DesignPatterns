@@ -1,9 +1,9 @@
 ﻿using HeadFirst_DesignPatterns.Chapter_1;
 using HeadFirst_DesignPatterns.Templates;
-using HeadFirst_DesignPatterns.Tools;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Tools;
 
 namespace HeadFirst_DesignPatterns
 {

@@ -37,7 +37,7 @@ namespace Tools
         public static void PrintThenClear(string message, bool clear = true)
         {
             Console.WriteLine(message);
-            System.Threading.Thread.Sleep(message.Length * 50 + 500); //20 characters per second = 50ms per character (and added 1/2 second delay)
+            System.Threading.Thread.Sleep(message.Length * 50 + 500); //average person can read 20 characters per second = 50ms per character (and added 1/2 second delay)
             if (clear)
             {
                 Console.Clear();
