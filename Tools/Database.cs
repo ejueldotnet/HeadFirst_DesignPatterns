@@ -9,8 +9,18 @@ namespace Tools
 {
     class Sql
     {
-        public static void RunQuery_Sql(string sqlQuery, ref DataTable results, string overrideConnectionString_Mvp = "")
+        private static void ValidateParameter(string parameter)
         {
+
+            if (string.IsNullOrEmpty(parameter))
+            {
+                throw new ArgumentNullException(nameof(parameter));
+            }
+        }
+        public static void RunQuery_SqlQuery(string sqlQuery, ref DataTable results, string overrideConnectionString_Mvp = "")
+        {
+            //ToDo: Test and add support for array of results (multiple select statements in single query)
+            ValidateParameter(sqlQuery);
 
             DateTime start = DateTime.Now;
             try
@@ -43,12 +53,96 @@ namespace Tools
                 throw e;
             }
         }
-        public static void RunQuery_CdsSql(string sqlQuery, ref DataTable results)
+        /// <summary>
+        /// Used to perform insert/update/delete purely via SQL query (no parameters). Uses transaction
+        /// </summary>
+        /// <param name="sqlQuery"></param>
+        /// <param name="overrideConnectionString"></param>
+        /// <param name="minRowsAffected"></param>
+        /// <param name="maxRowsAffected"></param>
+        /// <returns></returns>
+        public static bool RunQuery_SqlTransaction(string sqlQuery, string overrideConnectionString = "", int minRowsAffected = 0, int maxRowsAffected = 0)
         {
-            string clientId = AppSettings.dataverse_appId;
-            string clientSecretKey = AppSettings.dataverse_appSecretKey;
-            string sqlConnectionString = AppSettings.connectionString_Dataverse;
-            string resourceId = AppSettings.dataverse_debugCrmResourceId;
+#warning untested function: RunQuery_SqlTransaction
+//ToDo: build tests
+            ValidateParameter(sqlQuery);
+
+            bool isTransactionSuccessful = false;
+            string connectionString = !string.IsNullOrEmpty(overrideConnectionString) ? overrideConnectionString: AppSettings.connectionString_SQL;
+            
+
+            using SqlConnection connection = new SqlConnection(connectionString);
+            connection.Open();
+
+            SqlCommand command = connection.CreateCommand();
+            SqlTransaction transaction;
+
+            // Start a local transaction.
+            transaction = connection.BeginTransaction("RunQuery_SqlTransaction");
+
+            // Must assign both transaction object and connection
+            // to Command object for a pending local transaction
+            command.Connection = connection;
+            command.Transaction = transaction;
+
+            try
+            {
+                command.CommandText = sqlQuery;
+                int rowsAffected = command.ExecuteNonQuery();
+
+                //ToDo: SqlTransaction - Confirm number of rows impacted are in an expected range before committing transaction
+#warning Test rollback of transactions
+                if(maxRowsAffected > 0 && 
+                    (rowsAffected < minRowsAffected || rowsAffected > maxRowsAffected))
+                {
+                    MyConsole.WriteLine($"Expected rows affected between {minRowsAffected} and {maxRowsAffected} (actual was {rowsAffected})");
+                    Rollback(transaction);
+                }
+                else
+                {
+                    // Attempt to commit the transaction.
+                    transaction.Commit();
+                    Console.WriteLine("Transaction successfully committed");
+                    isTransactionSuccessful = true;
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Commit Exception Type: {0}", ex.GetType());
+                Console.WriteLine("  Message: {0}", ex.Message);
+
+                Rollback(transaction);
+            }
+            //ToDo: Test what happens if transaction is never rolled back
+            //Idea: Begin transaction before executing code, then commit transaction after code completes (might cause issues if multi-threading). Would require passing in the 
+            return isTransactionSuccessful;
+        }
+
+        private static void Rollback(SqlTransaction transaction)
+        {
+            MyConsole.WriteLine("Attempt to roll back the transaction");
+            try
+            {
+                transaction.Rollback();
+            }
+            catch (Exception ex2)
+            {
+                // This catch block will handle any errors that may have occurred
+                // on the server that would cause the rollback to fail, such as
+                // a closed connection.
+                Console.WriteLine("Rollback Exception Type: {0}", ex2.GetType());
+                Console.WriteLine("  Message: {0}", ex2.Message);
+            }
+        }
+
+        public static void RunQuery_CdsSqlQuery_UsingClientIdAndSecret(string sqlQuery, ref DataTable results, string pClientId = "", string pClientSecretKey = "", string pSqlConnectionString = "", string pResourceId = "")
+        {
+            ValidateParameter(sqlQuery);
+            string clientId = !string.IsNullOrEmpty(pClientId) ? pClientId : AppSettings.dataverse_appId;
+            string clientSecretKey = !string.IsNullOrEmpty(pClientSecretKey) ? pClientSecretKey : AppSettings.dataverse_appSecretKey;
+            string sqlConnectionString = !string.IsNullOrEmpty(pSqlConnectionString) ? pSqlConnectionString : AppSettings.connectionString_Dataverse;
+            string resourceId = !string.IsNullOrEmpty(pResourceId) ? pResourceId : AppSettings.dataverse_debugCrmResourceId;
 
             string AadInstance = "https://login.microsoftonline.com/{0}";
 
@@ -71,7 +165,7 @@ namespace Tools
     }
     class ExcelFiles
     {
-        public static int WorkSheet_To_DataTable(string filePath, string worksheetName, ref DataTable dt)
+        public static int WorkSheet_To_DataTable(string filePath, string worksheetName, ref DataTable dt, bool promptRetry = false)
         {
             int retryCount = 0;
         retryWorkSheet_To_DataTable:
@@ -127,7 +221,7 @@ namespace Tools
             }
             catch (System.IO.IOException ex)
             {
-                if (retryCount++ == 0)
+                if (promptRetry && retryCount++ == 0)
                 {
                     MyConsole.WriteLine(ConsoleColor.Red, $"Error opening {filePath}\nMessage: {ex.Message}\n" +
                         "(Retry 1 time before returning error)\nPress any key to retry...");
