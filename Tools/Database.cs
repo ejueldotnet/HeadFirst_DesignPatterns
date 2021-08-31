@@ -1,13 +1,75 @@
 ﻿using ClosedXML.Excel;
 using System;
-using System.Collections.Generic;
 using System.Data;
-using System.Text;
-using Tools;
+using Microsoft.IdentityModel.Clients.ActiveDirectory;
+using Microsoft.Data.SqlClient;
+using HeadFirst_DesignPatterns;
 
 namespace Tools
 {
-    class Convert_ExcelFiles
+    class Sql
+    {
+        public static void RunQuery_Sql(string sqlQuery, ref DataTable results, string overrideConnectionString_Mvp = "")
+        {
+
+            DateTime start = DateTime.Now;
+            try
+            {
+                string connectionString = "";
+                if (overrideConnectionString_Mvp.Length > 0)
+                {
+                    connectionString = overrideConnectionString_Mvp;
+                }
+                else
+                {
+                    connectionString = AppSettings.connectionString_SQL;
+                }
+                MyConsole.WriteLine(ConsoleColor.Green, $"Running SQL db query...");
+                using SqlConnection connection = new SqlConnection(connectionString);
+                SqlCommand cmd = new SqlCommand(sqlQuery, connection);
+                connection.Open();
+
+                SqlDataAdapter da = new SqlDataAdapter(cmd);
+                da.Fill(results);
+                da.Dispose();
+                connection.Close();
+            }
+            catch (SqlException e)
+            {
+                TimeSpan span = DateTime.Now - start;
+                MyConsole.WriteLine(ConsoleColor.Red, $"***** Query ran for {span.Seconds} seconds before throwing exception\n\n");
+                //Console.WriteLine(e.ToString());
+                //Console.ReadKey();
+                throw e;
+            }
+        }
+        public static void RunQuery_CdsSql(string sqlQuery, ref DataTable results)
+        {
+            string clientId = AppSettings.dataverse_appId;
+            string clientSecretKey = AppSettings.dataverse_appSecretKey;
+            string sqlConnectionString = AppSettings.connectionString_Dataverse;
+            string resourceId = AppSettings.dataverse_debugCrmResourceId;
+
+            string AadInstance = "https://login.microsoftonline.com/{0}";
+
+            AuthenticationContext authenticationContext = new AuthenticationContext(string.Format(AadInstance, AppSettings.dataverse_aadTenantId));
+            ClientCredential clientCredential = new ClientCredential(clientId, clientSecretKey);
+
+            AuthenticationResult authenticationResult = authenticationContext.AcquireTokenAsync(resourceId, clientCredential).Result;
+
+            MyConsole.WriteLine(ConsoleColor.Green, $"Running Dataverse query...");
+
+            var conn = new SqlConnection(sqlConnectionString)
+            {
+                AccessToken = authenticationResult.AccessToken
+            };
+            SqlCommand command = new SqlCommand(sqlQuery, conn);
+            conn.Open();
+            SqlDataReader reader = command.ExecuteReader();
+            results.Load(reader);
+        }
+    }
+    class ExcelFiles
     {
         public static int WorkSheet_To_DataTable(string filePath, string worksheetName, ref DataTable dt)
         {

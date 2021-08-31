@@ -19,21 +19,18 @@ namespace HeadFirst_DesignPatterns.Chapter_1
 
         public int RunDemo()
         {
-            List<Duck> ducks = new List<Duck>();
-            ducks.Add(new Duck());
-            Console.WriteLine("");
-            ducks.Add(new MallardDuck());
-            Console.WriteLine("");
-            ducks.Add(new RedheadDuck());
-            Console.WriteLine("");
-            ducks.Add(new RubberDuck());
-            Console.WriteLine("");
-            ducks.Add(new WoodenDuck());
-            Console.WriteLine("");
+            List<Duck> ducks = new List<Duck>
+            {
+                new Duck(),
+                new MallardDuck(),
+                new RedheadDuck(),
+                new RubberDuck(),
+                new WoodenDuck()
+            };
 
             foreach (Duck duck in ducks)
             {
-                duck.printDuckInfo();
+                duck.PrintDuckInfo();
             }
 
             return 0;

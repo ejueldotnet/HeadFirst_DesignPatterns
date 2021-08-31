@@ -14,14 +14,14 @@ namespace HeadFirst_DesignPatterns.Chapter_1
         public ISwimBehavior swim = new SinkInWater();
         public Duck()
         {
-            Console.Write("init Duck ");
+            Console.Write("\ninit Duck ");
             StrDisplay = "I am a duck";
         }
         public string Display()
         {
             return StrDisplay;
         }
-        public void printDuckInfo()
+        public void PrintDuckInfo()
         {
 
             Console.WriteLine($"\n{this.Display()}\n{this.fly.Fly()}\n{this.swim.Swim()}\n{this.quack.Quack()}");
